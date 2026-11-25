@@ -229,7 +229,13 @@ def make_doc(doc_id, t_ids, tags, fmt, subject, client, segs, cast, seed):
 
 
 def build_split(split, templates=None):
-    templates = templates or parse_templates(suite2.template_dir(split))
+    if templates is None:
+        templates = []
+        for d in suite2.template_dirs(split):
+            templates += parse_templates(d)
+        ids = [t["id"] for t in templates]
+        if len(ids) != len(set(ids)):
+            raise ValueError("duplicate template ids across template dirs")
     seed0, casts, prefix = suite2.SEEDS[split], suite2.CASTS[split], suite2.PREFIX[split]
     docs, tasks = [], []
     for t in templates:
@@ -290,7 +296,10 @@ def jsonl_bytes(rows):
 
 def templates_sha256(split="test"):
     h = hashlib.sha256()
-    for p in sorted(glob.glob(os.path.join(suite2.template_dir(split), "*.txt"))):
+    paths = []
+    for d in suite2.template_dirs(split):
+        paths += sorted(glob.glob(os.path.join(d, "*.txt")))
+    for p in paths:
         with open(p, "rb") as f:
             h.update(f.read().replace(b"\r\n", b"\n"))
     return h.hexdigest()
@@ -368,11 +377,11 @@ def main(argv=None):
             f.write("\n")
         print("%-8s docs %3d  tasks %3d  spans %5d  max_tokens %d" % (
             sp, man["n_docs"], man["n_tasks"], man["n_spans"], man["max_approx_tokens"]))
-    if len(built) == len(suite2.SPLITS):
+    if len(built) == len(suite2.SPLITS):  # all splits built: check cross-split overlap
         surf = {sp: generated_surfaces(d) for sp, d in built.items()}
         for x in suite2.SPLITS:
             for y in suite2.SPLITS:
-                if x < y and {x, y} != {"dev", "sample"}:  # sample shares the dev pool by design
+                if x < y and {x, y} not in ({"dev", "sample"}, {"test", "test21"}):  # shared pools by design
                     inter = surf[x] & surf[y]
                     print("overlap %s/%s: %d identifying surfaces%s" % (
                         x, y, len(inter), (" e.g. %s" % sorted(inter)[:5]) if inter else ""))

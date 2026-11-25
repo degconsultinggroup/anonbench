@@ -112,7 +112,7 @@ def main(argv=None):
             _e, leaked, _ = v1.leak_check(d, t, out)
             check("ref_reformat", leaked > 0, "%s %r -> %r" % (t["id"], s["text"], alt))
 
-    if os.path.isdir(suite2.template_dir(a.split)):
+    if all(os.path.isdir(d) for d in suite2.template_dirs(a.split)):
         rc = build2.main(["--check", "--split", a.split])
         check("build_check", rc == 0, "rebuild mismatch")
     else:

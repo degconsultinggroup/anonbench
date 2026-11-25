@@ -16,7 +16,7 @@ import random
 import string
 
 SPLITS = ("test", "dev", "frontier")
-POOL_OF = {"sample": "dev"}  # the public sample draws names from the dev partition, never from test
+POOL_OF = {"sample": "dev", "test21": "test"}  # the public sample draws names from the dev partition, never from test
 
 # (first, gender) gender in f/m/x. Mixed origins on purpose.
 FIRST = [
